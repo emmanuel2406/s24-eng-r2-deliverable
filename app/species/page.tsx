@@ -1,36 +1,65 @@
+"use client";
+
 import { Separator } from "@/components/ui/separator";
 import { TypographyH2 } from "@/components/ui/typography";
-import { createServerSupabaseClient } from "@/lib/server-utils";
-import { redirect } from "next/navigation";
+import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import AddSpeciesDialog from "./add-species-dialog";
+import OrderSpecies from "./order-species";
 import SpeciesCard from "./species-card";
 
-export default async function SpeciesList() {
-  // Create supabase server component client and obtain user session from stored cookie
-  const supabase = createServerSupabaseClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+export default function SpeciesList() {
+  const router = useRouter();
 
-  if (!session) {
-    // this is a protected route - only users who are signed in can view this route
-    redirect("/");
-  }
+  const [orderField, setOrderField] = useState<string>("id");
+  const [orderAsc, setOrderAsc] = useState<boolean>(false);
+  const [species, setSpecies] = useState([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Obtain the ID of the currently signed-in user
-  const sessionId = session.user.id;
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
 
-  const { data: species } = await supabase.from("species").select("*").order("id", { ascending: false });
+    const fetchSessionAndSpecies = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
+      if (!sessionData.session || sessionError) {
+        // Redirect if not signed in
+        router.push("/");
+        return;
+      }
+
+      setSessionId(sessionData.session.user.id);
+
+      const { data: speciesData, error: speciesError } = await supabase
+        .from("species")
+        .select("*")
+        .order(orderField, { ascending: orderAsc });
+
+      if (!speciesError) {
+        setSpecies(speciesData);
+      } else {
+        console.error("Failed to fetch species:", speciesError.message);
+        // Handle error - possibly set an error state here
+      }
+    };
+
+    void fetchSessionAndSpecies();
+  }, [orderField, orderAsc, router]);
+
+  // Return statement remains unchanged
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <TypographyH2>Species List</TypographyH2>
-        <AddSpeciesDialog userId={sessionId} />
+        {/* <OrderSpecies setOrderField={setOrderField} setOrderAsc={setOrderAsc} /> */}
+        {sessionId && <AddSpeciesDialog userId={sessionId} />}
       </div>
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
-        {species?.map((species) => <SpeciesCard key={species.id} species={species} />)}
+        {species.map((speciesItem) => (
+          <SpeciesCard key={speciesItem.id} species={speciesItem} userId={sessionId} />
+        ))}
       </div>
     </>
   );
