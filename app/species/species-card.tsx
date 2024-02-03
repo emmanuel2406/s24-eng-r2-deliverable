@@ -9,7 +9,7 @@ import ViewSpeciesDialog from "./view-species-dialog";
 import Image from "next/image";
 type Species = Database["public"]["Tables"]["species"]["Row"];
 
-export default function SpeciesCard({ species, userId }: { species: Species; userId: string }) {
+export default function SpeciesCard({ species, userId }: { species: Species; userId: string | null }) {
   return (
     <div className="m-4 w-72 min-w-72 flex-none rounded border-2 p-3 shadow">
       {species.image && (

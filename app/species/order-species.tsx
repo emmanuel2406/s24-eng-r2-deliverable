@@ -1,12 +1,20 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "@/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { type BaseSyntheticEvent } from "react"
+import {
+  Form,
+  FormControl,
+  FormItem,
+  FormField,
+  FormLabel,
+} from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "@/components/ui/use-toast";
 
 // Updated schema to reflect the expected string values
 const FormSchema = z.object({
@@ -16,7 +24,7 @@ const FormSchema = z.object({
 type FormData = z.infer<typeof FormSchema>;
 
 interface OrderProps {
-  setOrderField: (field: string | null) => void;
+  setOrderField: (field: string) => void;
   setOrderAsc: (asc: boolean) => void;
 }
 
@@ -32,42 +40,64 @@ export default function OrderSpecies({ setOrderField, setOrderAsc }: OrderProps)
     // Determine the order direction and field based on the selected value
     if (data.order === "Z-A") {
       setOrderAsc(false); // For Z-A ordering
-      setOrderField("name"); // Assuming 'name' is the field you want to order by
+      setOrderField("scientific_name"); // Assuming 'name' is the field you want to order by
     } else if (data.order === "A-Z") {
       setOrderAsc(true); // For A-Z ordering
-      setOrderField("name"); // Assuming 'name' is the field you want to order by
+      setOrderField("scientific_name"); // Assuming 'name' is the field you want to order by
     } else {
-      setOrderField(null); // For 'none', implying no specific order
+      setOrderAsc(true);
+      setOrderField("id"); // For 'none', implying no specific order
     }
 
     toast({
-      title: "Ordering: " + data.order,
+      title: "Scientifc name ordering: " + data.order,
     });
   }
 
   return (
-    <Form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-      <FormField
-        control={form.control}
-        name="order" // Corrected name to match schema
-        render={({ field }) => (
-          <FormItem className="space-y-3">
-            <FormLabel>Order</FormLabel>
-            <FormControl>
-              <RadioGroup
-                {...field} // Spread field props to handle value and onChange
-                className="flex flex-col space-y-1"
-              >
-                <RadioGroupItem value="none">No Order</RadioGroupItem>
-                <RadioGroupItem value="A-Z">A-Z</RadioGroupItem>
-                <RadioGroupItem value="Z-A">Z-A</RadioGroupItem>
+    <Form {...form}>
+      <form onSubmit={(e: BaseSyntheticEvent) => void form.handleSubmit(onSubmit)(e)}>
+            <FormField
+              control = {form.control}
+              name = "order"
+              render={({ field }) => (
+                <RadioGroup
+                onValueChange = {field.onChange}
+                defaultValue = {field.value}
+                className="flex flex-row">
+
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="A-Z" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      A-Z
+                    </FormLabel>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="Z-A" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Z-A
+                    </FormLabel>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="none" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Default
+                    </FormLabel>
+                </FormItem>
               </RadioGroup>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <Button type="submit">Submit</Button>
+
+
+
+              )}
+            />
+      <Button type="submit" variant="outline">Order by scientific name</Button>
+      </form>
     </Form>
   );
 }

@@ -8,18 +8,19 @@ import { useEffect, useState } from "react";
 import AddSpeciesDialog from "./add-species-dialog";
 import OrderSpecies from "./order-species";
 import SpeciesCard from "./species-card";
+import type { Database } from "@/lib/schema";
+type Species = Database["public"]["Tables"]["species"]["Row"];
 
 export default function SpeciesList() {
   const router = useRouter();
 
   const [orderField, setOrderField] = useState<string>("id");
   const [orderAsc, setOrderAsc] = useState<boolean>(false);
-  const [species, setSpecies] = useState([]);
+  const [species, setSpecies] = useState<Species[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
-
     const fetchSessionAndSpecies = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
@@ -28,7 +29,6 @@ export default function SpeciesList() {
         router.push("/");
         return;
       }
-
       setSessionId(sessionData.session.user.id);
 
       const { data: speciesData, error: speciesError } = await supabase
@@ -44,6 +44,8 @@ export default function SpeciesList() {
       }
     };
 
+    router.refresh();
+
     void fetchSessionAndSpecies();
   }, [orderField, orderAsc, router]);
 
@@ -52,7 +54,7 @@ export default function SpeciesList() {
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <TypographyH2>Species List</TypographyH2>
-        {/* <OrderSpecies setOrderField={setOrderField} setOrderAsc={setOrderAsc} /> */}
+        <OrderSpecies setOrderField={setOrderField} setOrderAsc={setOrderAsc} />
         {sessionId && <AddSpeciesDialog userId={sessionId} />}
       </div>
       <Separator className="my-4" />
